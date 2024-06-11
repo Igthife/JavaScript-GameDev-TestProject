@@ -17,6 +17,25 @@
     transform: translate(-50%, -50%);
 
 }
-#obstacles {
+#obstacles, #bull{
     display: none;
 }
+.hide{
+    display:none;
+}
+#container1 #Start {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  -ms-transform: translate(-50%, -50%);
+  background-color: #ffffff;
+  color: rgb(0, 0, 0);
+  font-size: 16px;
+  padding: 12px 24px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+    
+}
+
