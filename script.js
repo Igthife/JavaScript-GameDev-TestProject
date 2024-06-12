@@ -17,7 +17,7 @@ window.addEventListener('load', function(){
             this.collisionRadius = 40;
             this.speedX = 0;
             this.speedY = 0;
-            this.speedModifier = 3;
+            this.speedModifier = 5;
             this.spriteWidth = 255;
             this.spriteHeight = 256;
             this.width = this.spriteWidth;
@@ -201,6 +201,80 @@ window.addEventListener('load', function(){
             }
         }
         update(){
+            let collisionObjects =[this.game.player, ...this.game.obstacles, ...this.game.enemies];
+            collisionObjects.forEach(object => {
+                let [collision, distance, sumOfRadii, dx, dy] = this.game.checkCollision(this, object);
+                if(collision){
+                    const unit_x = dx / distance;
+                    const unit_y = dy / distance;
+
+                    this.collisionX = object.collisionX + (sumOfRadii + 1) * unit_x;
+                    this.collisionY = object.collisionY + (sumOfRadii + 1) * unit_y;
+
+                    if(this.collisionX < 0 + this.game.player.collisionRadius * 2){
+                        this.collisionX = 0 + this.game.player.collisionRadius * 2;
+                    }else if(this.collisionX > this.game.width - this.game.player.collisionRadius * 2){
+                        this.collisionX = this.game.width - this.game.player.collisionRadius * 2;
+                    }
+
+                    if(this.collisionY > this.game.height - this.game.player.collisionRadius * 2){
+                        this.collisionY = this.game.height - this.game.player.collisionRadius * 2;
+                    }
+                    
+
+                    this.spriteX = this.collisionX - this.width * 0.5;
+                    this.spriteY = this.collisionY - this.height * 0.5 - 30;
+
+                }
+            });
+        }
+    }
+
+    class Enemy{
+        constructor(game){
+            this.game = game;
+            this.collisionRadius = 30;
+            this.margin = this.collisionRadius * 2;
+            this.collisionX = this.game.width + this.collisionRadius;
+            this.collisionY = this.game.topMargin + (Math.random() * (this.game.height - this.game.topMargin));
+            this.speedX = Math.random() * 3 + 0.5;
+            this.image = document.getElementById('toad');
+            this.spriteWidth = 140;
+            this.spriteHeight = 260;
+            this.width = this.spriteWidth;
+            this.height = this.spriteHeight;
+            this.spriteX;
+            this.spriteY;
+
+
+        }
+        draw(context){
+            context.drawImage(this.image, this.spriteX, this.spriteY);
+
+            if(this.game.debug){
+                console.log(this.collisionRadius);
+                context.beginPath();
+                context.arc(this.collisionX, this.collisionY, this.collisionRadius,
+                        0, Math.PI * 2);
+                context.save();
+                context.globalAlpha = 0.5;
+                context.fill();
+                context.restore();
+                context.stroke();
+            }
+        }
+        update(){
+            this.collisionX -= this.speedX;
+
+            this.spriteX = this.collisionX - this.width * 0.5;
+            this.spriteY = this.collisionY - this.height * 0.5 - 100;
+
+            if(this.spriteX + this.width < 0){
+                this.collisionX = this.game.width + this.collisionRadius * 3;
+                this.collisionY = this.game.topMargin + (Math.random() * (this.game.height - this.game.topMargin));
+                this.speedX = Math.random() * 3 + 0.5;
+            }
+            
             let collisionObjects =[this.game.player, ...this.game.obstacles];
             collisionObjects.forEach(object => {
                 let [collision, distance, sumOfRadii, dx, dy] = this.game.checkCollision(this, object);
@@ -212,10 +286,11 @@ window.addEventListener('load', function(){
                     this.collisionY = object.collisionY + (sumOfRadii + 1) * unit_y;
 
                     this.spriteX = this.collisionX - this.width * 0.5;
-                    this.spriteY = this.collisionY - this.height * 0.5 - 30;
+                    this.spriteY = this.collisionY - this.height * 0.5 - 100;
 
                 }
             });
+            
         }
     }
 
@@ -232,10 +307,12 @@ window.addEventListener('load', function(){
             this.interval = 1000/this.fps;
             this.eggTimer = 0;
             this.eggInterval = 1000;
-            this.numberOfObstacles = 10;
-            this.obstacles = [];
             this.maxEggs = 5;
+            this.numberOfObstacles = 10;
+            this.numberOfEnemies = 3;
+            this.obstacles = [];
             this.eggs = [];
+            this.enemies = [];
             this.gameObjects = [];
             this.mouse = {
                 x: this.width * 0.5,
@@ -248,14 +325,14 @@ window.addEventListener('load', function(){
                 this.mouse.x = e.offsetX;
                 this.mouse.y = e.offsetY;
                 /*
+                //mys solution
                 if(e.offsetX < 0){
                     this.mouse.x = 0;
                 }else if(e.offsetX > this.width){
                     this.mouse.x = this.width;
                 }else{
                     this.mouse.x = e.offsetX;
-                }*/
-                /*
+                }
                 if(e.offsetY < this.topMargin){
                     this.mouse.y = this.topMargin;
                 }else if(e.offsetY> this.height){
@@ -269,22 +346,7 @@ window.addEventListener('load', function(){
             window.addEventListener('mouseup', e => {
                 this.mouse.x = e.offsetX;
                 this.mouse.y = e.offsetY;
-                /*
-                if(e.offsetX < 0){
-                    this.mouse.x = 0;
-                }else if(e.offsetX > this.width){
-                    this.mouse.x = this.width;
-                }else{
-                    this.mouse.x = e.offsetX;
-                }*/
-                /*
-                if(e.offsetY < this.topMargin){
-                    this.mouse.y = this.topMargin;
-                }else if(e.offsetY> this.height){
-                    this.mouse.y = this.height;
-                }else{
-                    this.mouse.y = e.offsetY;
-                }*/
+
                 this.mouse.pressed = false;
             });
 
@@ -292,22 +354,7 @@ window.addEventListener('load', function(){
                 if(this.mouse.pressed){
                     this.mouse.x = e.offsetX;
                     this.mouse.y = e.offsetY;
-                    /*
-                    if(e.offsetX < 0){
-                        this.mouse.x = 0;
-                    }else if(e.offsetX > this.width){
-                        this.mouse.x = this.width;
-                    }else{
-                        this.mouse.x = e.offsetX;
-                    }*/
-                    /*
-                    if(e.offsetY < this.topMargin){
-                        this.mouse.y = this.topMargin;
-                    }else if(e.offsetY> this.height){
-                        this.mouse.y = this.height;
-                    }else{
-                        this.mouse.y = e.offsetY;
-                    }*/
+
                 }
             });
 
@@ -323,7 +370,7 @@ window.addEventListener('load', function(){
             if(this.timer > this.interval){
                 context.clearRect(0, 0, this.width, this.height);
 
-                this.gameObjects = [...this.eggs, ...this.obstacles, this.player];
+                this.gameObjects = [...this.eggs, ...this.obstacles, this.player, ...this.enemies];
 
                 this.gameObjects.sort((a,b) => {
                     return a.collisionY - b.collisionY;
@@ -361,6 +408,9 @@ window.addEventListener('load', function(){
         addEgg(){
             this.eggs.push(new Egg(this));
         }
+        addEnemy(){
+            this.enemies.push(new Enemy(this));
+        }
 
         checkCollision(a,b){
             const dx = a.collisionX - b.collisionX;
@@ -372,6 +422,10 @@ window.addEventListener('load', function(){
         }
 
         init(){
+            for(let i = 0; i < this.numberOfEnemies; i++){
+                this.addEnemy();
+            }
+
             let attempts = 0;
             while(this.obstacles.length < this.numberOfObstacles && attempts < 5000){
                 attempts++;
