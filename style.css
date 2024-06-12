@@ -17,13 +17,13 @@
     transform: translate(-50%, -50%);
 
 }
-#obstacles, #bull, #egg, #toad {
+#obstacles, #bull, #egg, #toad, #larva {
     display: none;
 }
 .hide{
     display:none;
 }
-#container1 #Start {
+#container1, #Start{
   position: absolute;
   top: 50%;
   left: 50%;
@@ -38,4 +38,5 @@
   border-radius: 5px;
     
 }
+
 
