@@ -17,7 +17,7 @@
     transform: translate(-50%, -50%);
 
 }
-#obstacles, #bull, #egg, #toad, #larva {
+#obstacles, #bull, #egg, #toad, #toads, #larva {
     display: none;
 }
 .hide{

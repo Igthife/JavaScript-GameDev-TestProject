@@ -46,6 +46,13 @@ window.addEventListener('load', function(){
             this.frameY = 5;
             this.image = document.getElementById('bull');
         }
+        restart(){
+            this.collisionX = this.game.width / 2;
+            this.collisionY = this.game.height / 2;
+            this.spriteX = this.collisionX - this.width * 0.5;
+            this.spriteY = this.collisionY - this.height * 0.5 - 100;
+
+        }
         draw(context){
             context.drawImage(this.image, this.frameX * this.spriteWidth, this.frameY * this.spriteHeight, 
                 this.spriteWidth, this.spriteHeight, this.spriteX, this.spriteY, this.width, this.height);
@@ -202,7 +209,7 @@ window.addEventListener('load', function(){
             this.spriteX = this.collisionX - this.width * 0.5;
             this.spriteY = this.collisionY - this.height * 0.5 - 30;
             this.hatchTimer = 0;
-            this.hatchInterval = 5000;
+            this.hatchInterval = 10000;
             this.markedForDeletion = false;
             this.textOffset = 55;
 
@@ -275,12 +282,17 @@ window.addEventListener('load', function(){
             if(this.collisionY < this.game.topMargin - this.collisionRadius){
                 this.markedForDeletion = true;
                 this.game.removeGameObjects();
-                this.game.savedHatchlings++;
+                if(!this.game.gameOver){
+                    this.game.savedHatchlings++;
+                }
                 console.log("Hatchlings saved: " + this.game.savedHatchlings + " Hatchlings lost: " + this.game.lostHatchlings);
 
                 for(let i = 0; i < 3; i++){
                     this.game.particles.push(new Firefly(this.game, this.collisionX, this.collisionY, 'yellow'));
                 }
+
+                eggHatching.currentTime = 0;
+                eggHatching.play();
 
                 larvaEscape.currentTime = 0;
                 larvaEscape.play();
@@ -298,7 +310,7 @@ window.addEventListener('load', function(){
             this.collisionX = this.game.width + this.collisionRadius;
             this.collisionY = this.game.topMargin + (Math.random() * (this.game.height - this.game.topMargin));
             this.speedX = Math.random() * 3 + 0.5;
-            this.image = document.getElementById('toad');
+            this.image = document.getElementById('toads');
             this.spriteWidth = 140;
             this.spriteHeight = 260;
             this.width = this.spriteWidth;
@@ -306,10 +318,17 @@ window.addEventListener('load', function(){
             this.spriteX;
             this.spriteY;
 
+            this.markedForDeletion = false;
+
+            this.frameX = 0;
+            this.frameY = Math.floor(Math.random() * 4);
+
 
         }
         draw(context){
-            context.drawImage(this.image, this.spriteX, this.spriteY);
+
+            context.drawImage(this.image, this.frameX * this.spriteWidth, this.frameY * this.spriteHeight,
+                 this.spriteWidth, this.spriteHeight, this.spriteX, this.spriteY, this.width, this.height);
 
             if(this.game.debug){
                 context.beginPath();
@@ -328,11 +347,18 @@ window.addEventListener('load', function(){
             this.spriteX = this.collisionX - this.width * 0.5;
             this.spriteY = this.collisionY - this.height * 0.5 - 100;
 
-            if(this.spriteX + this.width < 0){
+            if(this.spriteX + this.width < 0 ){
                 this.collisionX = this.game.width + this.collisionRadius * 3;
                 this.collisionY = this.game.topMargin + (Math.random() * (this.game.height - this.game.topMargin));
                 this.speedX = Math.random() * 3 + 0.5;
+                this.frameY = Math.floor(Math.random() * 4);
+
+                if(this.game.gameOver){
+                    this.markedForDeletion = true;
+                    this.game.removeGameObjects();
+                }
             }
+            
             
             let collisionObjects =[this.game.player, ...this.game.obstacles];
             collisionObjects.forEach(object => {
@@ -394,7 +420,9 @@ window.addEventListener('load', function(){
             if(this.collisionY < this.game.topMargin - this.game.player.collisionRadius * 2){
                 this.markedForDeletion = true;
                 this.game.removeGameObjects();
-                this.game.savedHatchlings++;
+                if(!this.game.gameOver){
+                    this.game.savedHatchlings++;
+                }
                 console.log("Hatchlings saved: " + this.game.savedHatchlings + " Hatchlings lost: " + this.game.lostHatchlings);
 
                 for(let i = 0; i < 3; i++){
@@ -405,7 +433,7 @@ window.addEventListener('load', function(){
                 larvaEscape.play();
             }
 
-            let collisionObjects =[this.game.player, ...this.game.obstacles];
+            let collisionObjects =[this.game.player, ...this.game.obstacles, ...this.game.eggs];
             collisionObjects.forEach(object => {
                 let [collision, distance, sumOfRadii, dx, dy] = this.game.checkCollision(this, object);
                 if(collision){
@@ -424,11 +452,13 @@ window.addEventListener('load', function(){
                 if(this.game.checkCollision(this, enemy)[0]){
                     this.markedForDeletion = true;
                     this.game.removeGameObjects();
-                    this.game.lostHatchlings++;
+                    if(!this.game.gameOver){
+                        this.game.lostHatchlings++;
+                    }
                     console.log("Hatchlings saved: " + this.game.savedHatchlings + " Hatchlings lost: " + this.game.lostHatchlings);
 
-                    for(let i = 0; i < 3; i++){
-                        this.game.particles.push(new Firefly(this.game, this.collisionX, this.collisionY, 'red'));
+                    for(let i = 0; i < 5; i++){
+                        this.game.particles.push(new Spark(this.game, this.collisionX, this.collisionY, 'red'));
                     }
 
                     enemyEat.currentTime = 0;
@@ -463,7 +493,7 @@ window.addEventListener('load', function(){
     class Firefly extends Particle{
         update(){
             this.angle += this.va;
-            this.collisionX += this.speedX;
+            this.collisionX += Math.cos(this.angle) * this.speedX;
             this.collisionY -= this.speedY;
             if(this.collisionY < 0 - this.radius){
                 this.markedForDeletion = true;
@@ -474,7 +504,16 @@ window.addEventListener('load', function(){
     }
     class Spark extends Particle{
         update(){
-
+            this.angle += this.va * 0.5;
+            this.collisionX -= Math.sin(this.angle) * this.speedX;
+            this.collisionY -= Math.cos(this.angle) * this.speedY;
+            if(this.radius > 0.1){
+                this.radius -= 0.05;
+            }
+            if(this.radius < 0.2){
+                this.markedForDeletion = true;
+                this.game.removeGameObjects();
+            }
         }
     }
 
@@ -491,17 +530,20 @@ window.addEventListener('load', function(){
             this.interval = 1000/this.fps;
             this.eggTimer = 0;
             this.eggInterval = 1000;
-            this.maxEggs = 5;
+            this.maxEggs = 10;
             this.numberOfObstacles = 10;
             this.numberOfEnemies = 3;
-            this.lostHatchlings = 0;
-            this.savedHatchlings = 0;
             this.obstacles = [];
             this.hatchings = [];
             this.particles = [];
             this.eggs = [];
             this.enemies = [];
             this.gameObjects = [];
+            this.lostHatchlings = 0;
+            this.savedHatchlings = 0;
+            this.winningScore = 30;
+            this.lives = 3;
+            this.gameOver = false;
             this.mouse = {
                 x: this.width * 0.5,
                 y: this.height * 0.5,
@@ -549,13 +591,15 @@ window.addEventListener('load', function(){
             window.addEventListener('keydown', e =>{
                 if(e.key == 'd'){
                     this.debug = !this.debug;
+                }else if(e.key == 'r'){
+                    this.restart();
                 }
             })
             
             
         }
         render(context, deltaTime){
-            if(this.timer > this.interval){
+            if(this.timer > this.interval ){ //&& !this.gameOver
                 context.clearRect(0, 0, this.width, this.height);
 
                 this.gameObjects = [...this.eggs, ...this.obstacles, this.player, ...this.enemies, ...this.hatchings, ...this.particles];
@@ -581,12 +625,13 @@ window.addEventListener('load', function(){
                     context.stroke();
                 }
 
-                if(this.eggTimer > this.eggInterval && this.eggs.length < this.maxEggs){
+                if(this.eggTimer > this.eggInterval && this.eggs.length < this.maxEggs && !this.gameOver){
                     this.addEgg();
                     this.eggTimer = 0;
                 }else{
                     this.eggTimer += deltaTime;
                 }
+
                 // draw status text
                 context.save();
                 context.textAlign = 'left';
@@ -595,12 +640,37 @@ window.addEventListener('load', function(){
                     context.fillText('Eaten: ' + this.lostHatchlings, 25, 100);
                 }
                 context.restore();
+
+                //win logic
+                if(this.savedHatchlings >= this.winningScore || this.lostHatchlings > this.lives){
+                    context.save();
+                    context.fillStyle = 'rgba(0,0,0,0.5)';
+                    context.fillRect(0, 0, this.width, this.height);
+                    context.fillStyle= 'white';
+                    context.textAlign = 'center';
+                    context.shadowOffsetX = 10;
+                    context.shadowOffsetY = 10;
+                    context.shadowColor = 'black';
+                    let message1;
+                    let message2;
+                    if(this.lostHatchlings <= this.lives){
+                        message1 = "Victory!!";
+                        message2 = "You saved " + this.savedHatchlings + " hatchlings with only " + this.lostHatchlings + " casualties!";
+                    }else{
+                        message1 = "Defeat!";
+                        message2 = "You lost " + this.lostHatchlings + " hatchlings but could only afford to lose " + this.lives + "!";
+                    }
+                    context.font = '130px Helvetica';
+                    context.fillText(message1, this.width / 2, this.height / 2 - 40);
+                    context.font = '40px Helvetica';
+                    context.fillText(message2, this.width / 2, this.height / 2 + 60);
+                    context.restore();
+                    this.gameOver = true;
+                    document.getElementById('container1').hidden = false;
+                }
             }
-            
+
             this.timer += deltaTime;
-            
-            
-            
             
         }
         addEgg(){
@@ -623,6 +693,24 @@ window.addEventListener('load', function(){
             this.eggs = this.eggs.filter(object => !object.markedForDeletion);
             this.hatchings = this.hatchings.filter(object => !object.markedForDeletion);
             this.particles = this.particles.filter(object => !object.markedForDeletion);
+            this.enemies = this.enemies.filter(object => !object.markedForDeletion);
+        }
+
+        restart(){
+            this.player.restart();
+
+            this.eggTimer = 0;
+            this.obstacles = [];
+            this.hatchings = [];
+            this.particles = [];
+            this.eggs = [];
+            this.enemies = [];
+            //dthis.gameObjects = [];
+            this.lostHatchlings = 0;
+            this.savedHatchlings = 0;
+            this.gameOver = false;
+
+            this.init();
         }
 
         init(){
@@ -683,10 +771,9 @@ window.addEventListener('load', function(){
             }*/
         }
     }
-
-    const game = new Game(canvas);
+    var game = new Game(canvas);
     game.init();
-
+    var firstRun = true;
 
     mySound.addEventListener('ended', function() {
         this.currentTime = 0;
@@ -710,13 +797,22 @@ window.addEventListener('load', function(){
     //animate();
 
     document.getElementById('Start').addEventListener("click", function() {
-        animate(0);
+        if(firstRun){
+            animate(0);
+            mySound.muted = false;
+            firstRun = false;
+        }
+        mySound.currentTime = 0;
+        mySound.play();
         document.getElementById('container1').hidden = true;
-        mySound.muted = false;
-        mySound.play();   
+        
+        if(game.gameOver){
+            game.restart();
+        }
 
         game.mouse.x = game.width/2;
         game.mouse.y = game.height/2;
+        
     });
 
 
